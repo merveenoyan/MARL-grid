@@ -7,3 +7,4 @@ To run the project, run:
 To-do:
 - Add direction to the state space
 - Take user parameters through GUI
+- Take second best action when agents try to go over blocks or get out of the board
