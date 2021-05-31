@@ -4,3 +4,6 @@ To run the project, run:
 - python run.py
 
  
+To-do:
+- Add direction to the state space
+- Take user parameters through GUI
