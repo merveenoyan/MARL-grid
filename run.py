@@ -17,12 +17,13 @@ import time
 
 
 #size of the board, for this project, it's hard-coded
-SIZE=8
+SIZE_X = 8
+SIZE_Y = 13
 class Agent:
   
   def __init__(self, x, y, blocks=None):
     ## defining empty cells and blocks
-    env = np.zeros(shape = [SIZE,SIZE])
+    env = np.zeros(shape = [SIZE_X,SIZE_Y])
     if blocks == None:
       blocks = [[0,6],[3,5],[5,2]]
     
@@ -63,12 +64,12 @@ class Agent:
     #in case if they get out of table
     if self.x<0:
       self.x=0
-    if self.x>=SIZE:
-      self.x = SIZE-1
+    if self.x>=SIZE_X:
+      self.x = SIZE_X-1
     if self.y<0:
       self.y=0
-    if self.y>=SIZE:
-      self.y = SIZE-1
+    if self.y>=SIZE_Y:
+      self.y = SIZE_Y-1
     for i in blocks:
       if [self.x, self.y] == i:
         action = np.random.randint(0,4)
@@ -92,9 +93,9 @@ def Q_table():
 
     q_table = {}
 
-    for a in range(0, SIZE): #x coordinate of agent
-        for b in range(0, SIZE): #y coordinate of agent
-            for c in range(0, SIZE+SIZE): #distance between agents
+    for a in range(0, SIZE_X): #x coordinate of agent
+        for b in range(0, SIZE_Y): #y coordinate of agent
+            for c in range(0, SIZE_X+SIZE_Y): #distance between agents
                 q_table[((a,b,c))]= [np.random.uniform(-4, 0) for i in range(4)] 
     print(f"q-table is {q_table}")
     return q_table
@@ -140,7 +141,7 @@ if __name__=="__main__":
       
       #first action is a random one
       
-      if i<11: #for first ten turns explore
+      if i<21: #for first ten turns explore
           action_c1 = np.random.randint(0,4)
           action_c2 = np.random.randint(0,4)
           action_r = np.random.randint(0,4)
@@ -228,7 +229,7 @@ if __name__=="__main__":
       #interface
     
       if(show):
-        env = np.zeros((SIZE, SIZE, 3), dtype=np.uint8) # 3 is the number of channels for RGB image
+        env = np.zeros((SIZE_X, SIZE_Y, 3), dtype=np.uint8) # 3 is the number of channels for RGB image
         env[runner.x][runner.y] = d["runner_color"]
         env[chaser1.x][chaser1.y] = d["chaser1_color"]
         env[chaser2.x][chaser2.y] = d["chaser2_color"]
@@ -237,7 +238,7 @@ if __name__=="__main__":
           env[i[0]][i[1]] = d["block_color"]
           
         image = Image.fromarray(env, 'RGB')
-        image = image.resize((500, 500), resample=Image.NEAREST)
+        image = image.resize((1300, 800), resample=Image.NEAREST)
 
         
         cv2.imshow("ENV", np.array(image))
