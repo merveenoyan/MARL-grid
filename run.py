@@ -18,7 +18,7 @@ import time
 
 #size of the board, for this project, it's hard-coded
 SIZE_X = 8
-SIZE_Y = 13
+SIZE_Y = 8
 class Agent:
   
   def __init__(self, x, y, blocks=None):
@@ -30,7 +30,13 @@ class Agent:
     self.x = x
     self.y = y
 
-  #manhattan distance
+  def dist_x(self, other):
+    return self.x-other.x
+
+  def dist_y(self, other):
+    return self.y-other.y
+
+  #manhattan distance for penalties
   def dist(self, other):
     return(abs(self.x-other.x)+abs(self.y-other.y))
 
@@ -92,12 +98,14 @@ gamma = 0.1
 def Q_table():
 
     q_table = {}
-
+  
     for a in range(0, SIZE_X): #x coordinate of agent
         for b in range(0, SIZE_Y): #y coordinate of agent
-            for c in range(0, SIZE_X+SIZE_Y): #distance between agents
-                q_table[((a,b,c))]= [np.random.uniform(-4, 0) for i in range(4)] 
-    print(f"q-table is {q_table}")
+            for c in range(-SIZE_X+1, SIZE_X): #distance between agents
+              for d in range(-SIZE_Y+1, SIZE_Y): #distance between agents
+                q_table[((a,b,c,d))]= [np.random.uniform(-4, 0) for i in range(5)] 
+    
+    print(f"q-table is {q_table.keys()}")
     return q_table
 
 
@@ -129,28 +137,30 @@ if __name__=="__main__":
     runner= Agent(0,0)
     
     
-    for i in range(100):
+    for i in range(300):
       
       # states are (x, y, distance to the other agent)
+      
+      dstate_r = (runner.x, runner.y, min(runner.dist_x(chaser1),runner.dist_x(chaser2)), min(runner.dist_y(chaser1),runner.dist_y(chaser2)))
 
-      dstate_r = (runner.x, runner.y, min(runner.dist(chaser1),runner.dist(chaser2)))
+      dstate_c1 = (chaser1.x, chaser1.y, chaser1.dist_x(runner), chaser1.dist_y(runner))
 
-      dstate_c1 = (chaser1.x, chaser1.y, runner.dist(chaser1))
-
-      dstate_c2 = (chaser2.x, chaser2.y, runner.dist(chaser2))
+      dstate_c2 = (chaser2.x, chaser2.y, chaser2.dist_x(runner), chaser2.dist_y(runner))
       
       #first action is a random one
       
-      if i<21: #for first ten turns explore
-          action_c1 = np.random.randint(0,4)
-          action_c2 = np.random.randint(0,4)
-          action_r = np.random.randint(0,4)
+      if i<150: #for first ten turns explore
+        print("exploration")
+        action_c1 = np.random.randint(0,4)
+        action_c2 = np.random.randint(0,4)
+        action_r = np.random.randint(0,4)
 
       else: #for the rest of the episodes take the action that has
           #the highest q-value for that state
-          action_c1 = np.argmax(dstate_c1)
-          action_c2 = np.argmax(dstate_c2)
-          action_r = np.argmax(dstate_r)
+        print("exploitation")
+        action_c1 = np.argmax(dstate_c1)
+        action_c2 = np.argmax(dstate_c2)
+        action_r = np.argmax(dstate_r)
 
 
       #defining rewards
@@ -174,7 +184,7 @@ if __name__=="__main__":
       #reward conditions
       #chasers get reward when they get close to runner
 
-      if runner.dist(chaser1)==2 or runner.dist(chaser2)==2:
+      if runner.dist_x(chaser1)==2 or runner.dist_x(chaser2)==2:
         reward_1 = chaser_reward_1
 
       elif runner.dist(chaser1)==1 or runner.dist(chaser2)==1:
@@ -197,12 +207,11 @@ if __name__=="__main__":
         chasers_win += 1
         break
       
-
       #state updates  
-      new_dstate_c2 = ( chaser2.x, chaser2.y, runner.dist(chaser2) )
-      new_dstate_c1 = ( chaser1.x, chaser1.y, runner.dist(chaser1) )
-      new_dstate_r = ( runner.x, runner.y, min(chaser1.dist(runner), chaser2.dist(runner)))
-      
+      new_dstate_c2 = ( chaser2.x, chaser2.y, chaser2.dist_x(runner), chaser2.dist_y(runner) )
+      new_dstate_c1 = ( chaser1.x, chaser1.y, chaser1.dist_x(runner), chaser1.dist_y(runner) )
+      new_dstate_r = ( runner.x, runner.y, min(runner.dist_x(chaser1), runner.dist_x(chaser2)), min(runner.dist_y(chaser1), runner.dist_y(chaser2)))
+
       # calculating cumulated future reward
       future_qval_c1 = np.max(q_table_c1[new_dstate_c1])
 
@@ -222,6 +231,7 @@ if __name__=="__main__":
 
 
       #update q-table
+      
       q_table_c1[dstate_c1][action_c1] = new_qval_c1
       q_table_c2[dstate_c2][action_c2] = new_qval_c2
       q_table_r[dstate_r][action_r] = new_qval_r
@@ -229,7 +239,7 @@ if __name__=="__main__":
       #interface
     
       if(show):
-        env = np.zeros((SIZE_X, SIZE_Y, 3), dtype=np.uint8) # 3 is the number of channels for RGB image
+        env = np.zeros((SIZE_X, SIZE_Y, 3), dtype=np.uint8)
         env[runner.x][runner.y] = d["runner_color"]
         env[chaser1.x][chaser1.y] = d["chaser1_color"]
         env[chaser2.x][chaser2.y] = d["chaser2_color"]
