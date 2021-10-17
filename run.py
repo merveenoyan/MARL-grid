@@ -7,6 +7,9 @@ import cv2
 import pickle
 import math
 import time
+import argparse
+
+
 
 
 """ Single Agent class, environment is defined inside it,
@@ -17,18 +20,21 @@ import time
 
 
 #size of the board, for this project, it's hard-coded
-SIZE_X = 8
-SIZE_Y = 8
+#SIZE_X = 8
+#SIZE_Y = 8
 class Agent:
   
-  def __init__(self, x, y, blocks=None):
+  def __init__(self, SIZE_X, SIZE_Y, x, y, blocks=None):
     ## defining empty cells and blocks
-    env = np.zeros(shape = [SIZE_X,SIZE_Y])
+    self.x = x
+    self.y = y
+    self.SIZE_X = SIZE_X
+    self.SIZE_Y = SIZE_Y
+    env = np.zeros(shape = [self.SIZE_X,self.SIZE_Y])
     if blocks == None:
       blocks = [[0,6],[3,5],[5,2]]
     
-    self.x = x
-    self.y = y
+    
 
   def dist_x(self, other):
     return self.x-other.x
@@ -70,32 +76,22 @@ class Agent:
     #in case if they get out of table
     if self.x<0:
       self.x=0
-    if self.x>=SIZE_X:
-      self.x = SIZE_X-1
+    if self.x>=self.SIZE_X:
+      self.x = self.SIZE_X-1
     if self.y<0:
       self.y=0
-    if self.y>=SIZE_Y:
-      self.y = SIZE_Y-1
+    if self.y>=self.SIZE_Y:
+      self.y = self.SIZE_Y-1
     for i in blocks:
       if [self.x, self.y] == i:
         action = np.random.randint(0,4)
         self.action(action)
     #update positions
 
-  
-
-# RGB color coding
-d = {"runner_color":(0, 255, 0), "chaser1_color":(255,180, 20), "chaser2_color":(255,20,147), "block_color":(255, 255, 208)}
-
-#params
-episodes = 100
-show_ep = 10
-learning_rate = 0.1
-gamma = 0.1
 
 
 #Q-table
-def Q_table():
+def Q_table(SIZE_X, SIZE_Y):
 
     q_table = {}
   
@@ -110,18 +106,46 @@ def Q_table():
 
 
 
-
-
 if __name__=="__main__":
+
   
-  blocks = [[0,6],[3,5],[5,2]]
+
   show = False
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--runner", type=str, nargs = '?', default = "[0,0]", help = "Location of runner as a list")
+  parser.add_argument("--chaser_2", type=str, nargs = '?', default = "[6,6]", help = "Location of chaser_2 as a list")
+  parser.add_argument("--chaser_1", type=str, nargs = '?', default = "[6,5]", help = "Location of chaser_1 as a list")
+  parser.add_argument("--blocks", type=str, nargs = '?', default = "[[0,6],[3,5],[5,2]]", help = "List of location of blocks")
+  parser.add_argument("--SIZE_X", type=int, nargs = '?', default = 8, help = "Horizontal size")
+  parser.add_argument("--SIZE_Y", type=int, nargs = '?', default = 8, help = "Vertical size")
+  parser.add_argument("--exploitation_steps", type=int, nargs = '?', default = 150, help = "Exploitation steps")
+  parser.add_argument("--exploration_steps", type=int, nargs = '?', default = 150, help = "Exploration steps")
+  parser.add_argument("--episodes", type=int, nargs = '?', default = 100, help = "Episodes")
+  parser.add_argument("--show_ep", type=int, nargs = '?', default = 10, help = "Show every N episodes")
+  parser.add_argument("--learning_rate", type=float, nargs = '?', default = 0.1, help = "Learning rate")
+  parser.add_argument("--gamma", type=float, nargs = '?', default = 0.1, help = "Discount factor for future rewards")
+  args = parser.parse_args()
 
+  exploration_steps = args.exploration_steps
+  exploitation_steps = args.exploitation_steps
+  show_ep = args.show_ep
+  episodes = args.episodes
+  learning_rate = args.learning_rate
+  gamma = args.gamma
+  SIZE_X = args.SIZE_X
+  SIZE_Y = args.SIZE_Y
+  runner_loc = eval(args.runner)
+  chaser_1_loc = eval(args.chaser_1)
+  chaser_2_loc = eval(args.chaser_2)
+  blocks = eval(args.blocks)
 
-  # initialize Q_tables before training
-  q_table_c1 = Q_table()
-  q_table_c2 = Q_table()
-  q_table_r = Q_table()
+  rounds = exploration_steps + exploitation_steps
+
+  
+  
+  # RGB color coding
+  d = {"runner_color":(0, 255, 0), "chaser1_color":(255,180, 20), "chaser2_color":(255,20,147), "block_color":(255, 255, 208)}
+
 
   
   chasers_win = 0
@@ -132,12 +156,16 @@ if __name__=="__main__":
 
     # initialize agents back to their original positions by the 
     # beginning of every game
-    chaser1 = Agent(7,6)
-    chaser2 = Agent(7,7)
-    runner= Agent(0,0)
+    chaser1 = Agent(SIZE_X=SIZE_X, SIZE_Y=SIZE_Y, x = chaser_1_loc[0], y = chaser_1_loc[1])
+    chaser2 = Agent(SIZE_X=SIZE_X, SIZE_Y=SIZE_Y, x = chaser_2_loc[0], y = chaser_2_loc[1])
+    runner= Agent(SIZE_X=SIZE_X, SIZE_Y=SIZE_Y, x = runner_loc[0], y = runner_loc[1])
     
+    # initialize Q_tables before training
+    q_table_c1 = Q_table(SIZE_X=SIZE_X, SIZE_Y=SIZE_Y)
+    q_table_c2 = Q_table(SIZE_X=SIZE_X, SIZE_Y=SIZE_Y)
+    q_table_r = Q_table(SIZE_X=SIZE_X, SIZE_Y=SIZE_Y)
     
-    for i in range(300):
+    for i in range(rounds):
       
       # states are (x, y, distance to the other agent)
       
@@ -149,15 +177,15 @@ if __name__=="__main__":
       
       #first action is a random one
       
-      if i<150: #for first ten turns explore
-        print("exploration")
+      if i<exploration_steps: #for first ten turns explore
+
         action_c1 = np.random.randint(0,4)
         action_c2 = np.random.randint(0,4)
         action_r = np.random.randint(0,4)
 
       else: #for the rest of the episodes take the action that has
           #the highest q-value for that state
-        print("exploitation")
+
         action_c1 = np.argmax(dstate_c1)
         action_c2 = np.argmax(dstate_c2)
         action_r = np.argmax(dstate_r)
@@ -239,7 +267,7 @@ if __name__=="__main__":
       #interface
     
       if(show):
-        env = np.zeros((SIZE_X, SIZE_Y, 3), dtype=np.uint8)
+        env = np.zeros((args.SIZE_X, args.SIZE_Y, 3), dtype=np.uint8)
         env[runner.x][runner.y] = d["runner_color"]
         env[chaser1.x][chaser1.y] = d["chaser1_color"]
         env[chaser2.x][chaser2.y] = d["chaser2_color"]
