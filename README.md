@@ -18,9 +18,9 @@ Couple of arguments you can pass:
 - "--gamma": "Discount factor for future rewards" (float)
  
 To-do:
-- [] Add direction to the state space (DONE)
-- [] Take user parameters through GUI (DONE)
-- [] Write environment as a separate class
-- [] Take second best action when agents try to go over blocks or get out of the board (currently they get stuck)
+- Add direction to the state space (DONE)
+- Take user parameters through GUI (DONE)
+- Write environment as a separate class
+- Take second best action when agents try to go over blocks or get out of the board (currently they get stuck)
 
 
