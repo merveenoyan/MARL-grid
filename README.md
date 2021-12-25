@@ -1,5 +1,5 @@
 To run the project, run:
-- conda create --name env python=3.7
+- create python environment of your choice with version 3.7
 - pip install -r requirements.txt
 - python run.py
 
